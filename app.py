@@ -182,7 +182,10 @@ st.markdown("""
 	comprehensive analysis of surface water and how it has changed over time for
 	the **%s** concession.  Of the %s square kilometers in the concession, **%s**
 	(%s percent) have been, at some point, characterized by surface water or
-	surface water change.
+	surface water change.  The following chart illustrates the composition of the
+	surface water classes and surface water transitions in the concession. 
+	Hovering over the chart will display the area in square kilometers of each
+	water class/transition.
 
 """ %(
 		block_name, 
@@ -204,6 +207,8 @@ fig = go.Figure(
 			hole=.5)
 		]
 	)
+
+fig.update_traces(hoverinfo='label+value')
 
 st.plotly_chart(fig, use_container_width=True)
 
@@ -236,8 +241,9 @@ st.markdown("""
 
 	7. Evapotranspiration
 
-	8. Surface water
-
+	8. Some measures are daily, through yesterday.  Some are annual.  For those,
+	more up-to-date measures can be derived, but that would require a lot more
+	work.
 
 """)
 

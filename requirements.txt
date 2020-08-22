@@ -7,3 +7,4 @@ geopandas
 matplotlib
 descartes
 statsmodels
+plotly
