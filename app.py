@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 import datetime
 from statsmodels.tsa.stattools import adfuller
 import pydeck as pdk
+import plotly.graph_objects as go
 
 
 st.header("Prioritizing concessions based on Earth observation")
@@ -26,10 +27,11 @@ def load_data(plot=True):
 	properties = pd.read_pickle('data/properties.pkl')
 	vi = pd.read_pickle('data/vi.pkl')
 	defor = pd.read_pickle('data/defor.pkl')
-	return properties, vi, defor
+	water = pd.read_pickle('data/waterclass.pkl')
+	return properties, vi, defor, water
 
 
-properties, vi, defor = load_data()
+properties, vi, defor, water = load_data()
 
 
 st.markdown("""
@@ -161,6 +163,49 @@ c = alt.Chart(defor_df).mark_bar(
 
 st.altair_chart(c, use_container_width=True)
 
+water_df = water[water["block"]==block_name]
+total_water_area = np.round(sum(water_df["area_km2"]), 2)
+percent_water_area = np.round(100*total_water_area/area, 2)
+
+st.markdown("""
+
+	----
+
+	## Surface water 
+
+	The Joint Research Centre reports on the location and temporal distribution
+	of surface water from 1984 to 2019 and provides statistics on the extent and
+	change of those water surfaces.  The data are derived from Sentinel satellite
+	imagery, and the methods are published in
+	[_Nature_](https://www.nature.com/articles/nature20584).  The following chart
+	summarizes a 35-year analysis of the JRC output data, representing a
+	comprehensive analysis of surface water and how it has changed over time for
+	the **%s** concession.  Of the %s square kilometers in the concession, **%s**
+	(%s percent) have been, at some point, characterized by surface water or
+	surface water change.
+
+""" %(
+		block_name, 
+		"{:,d}".format(area), 
+		total_water_area, 
+		percent_water_area
+	)
+)
+
+labels = water_df["water_label"]
+values = water_df["area_km2"]
+
+# Use `hole` to create a donut-like pie chart
+fig = go.Figure(
+	data=[
+		go.Pie(
+			labels=labels, 
+			values=values, 
+			hole=.5)
+		]
+	)
+
+st.plotly_chart(fig, use_container_width=True)
 
 st.markdown("""
 
