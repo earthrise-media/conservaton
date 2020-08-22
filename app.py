@@ -28,17 +28,18 @@ def load_data(plot=True):
 	vi = pd.read_pickle('data/vi.pkl')
 	defor = pd.read_pickle('data/defor.pkl')
 	water = pd.read_pickle('data/waterclass.pkl')
-	return properties, vi, defor, water
+	evapo = pd.read_pickle('data/evapotranspiration.pkl')
+	return properties, vi, defor, water, evapo
 
 
-properties, vi, defor, water = load_data()
+properties, vi, defor, water, evapo = load_data()
 
 
 st.markdown("""
 
 	This roughcut web application is intended to illustrate both the baseline and
 	real-time environmental measurements on possible concessions.  Possible
-	metrics include vegetation indices, carbon content, deforestation, among
+	metrics include vegetatiwon indices, carbon content, deforestation, among
 	others.  The front-end is simple.  A fancy user interface or graphics can be
 	built.  The objective of this early application is to settle on the
 	measurements that are most useful for reporting and concession
@@ -102,9 +103,14 @@ st.markdown("""
 
 st.markdown("""
 
-	## Vegetation
-	Vegetation indices may be a leading indicator for ecosystem health, but at
-	least it indicates landscape level change.
+	## Vegetation 
+
+	Vegetation indices may be a leading indicator for ecosystem health. 
+	Unhealthy or sparse vegetation reflects more visible light and less
+	near-infrared light. This is the basic premise for the [two predominant
+	vegetation
+	indices](https://earthobservatory.nasa.gov/features/MeasuringVegetation/measuring_vegetation_2.php),
+	the Normalized Difference Vegetation Index and the Enhanced Vegetation Index.
 
 """)
 
@@ -133,6 +139,57 @@ nfdrs_data = alt.Chart(vi_df).mark_line(
 )
 
 st.altair_chart(nfdrs_data, use_container_width=True)
+
+evapo_df = evapo[evapo["block"]==block_name]
+evapo_df.columns = ["evapotranspiration", "date", "block"]
+
+st.markdown("""
+
+	Evapotranspiration is the sum of evaporation from the land surface plus
+transpiration from plants. Like the vegetation indices, it is a useful
+indicator of landscape level change. The FAO data to monitor [Water
+Productivity through Open access of Remotely sensed derived
+data](http://www.fao.org/3/i8225en/I8225EN.pdf) (WaPOR) provides access to 12
+years of continued observations over Africa.  The data are collected daily at
+20km resolution.  It may be useful to monitor long-term trends.
+
+""")
+
+evapo_window = st.slider(
+	'Symmetric moving average window (days on either side) to visualize long-term trends',
+	10, 200, 50
+)
+
+evapo_raw = alt.Chart(evapo_df).mark_circle(
+	color="#A9BEBE", 
+	size=1
+).encode(
+	x='date:T',
+	y='evapotranspiration'
+)
+
+evapo_smooth = alt.Chart(evapo_df).mark_line(
+	color='#e45756'
+).transform_window(
+	rolling_mean='mean(evapotranspiration)',
+	frame=[-evapo_window, evapo_window]
+).encode(
+	x=alt.X(
+		'date:T',
+		axis=alt.Axis(
+			title=""
+		),
+	),
+	y=alt.Y(
+		'rolling_mean:Q', 
+		axis=alt.Axis(
+			title="Evapotranspiration (mm)"
+		)
+	)
+)
+
+st.altair_chart(evapo_raw + evapo_smooth, use_container_width=True)
+
 
 
 defor_df = defor[defor["block"]==block_name]
