@@ -29,14 +29,15 @@ def load_data(plot=True):
 	defor = pd.read_pickle('data/defor.pkl')
 	water = pd.read_pickle('data/waterclass.pkl')
 	evapo = pd.read_pickle('data/evapotranspiration.pkl')
+	pop = pd.read_pickle('data/population.pkl')
 
 	fires = pd.read_pickle('data/fires.pkl')
 	fires.columns = ['fires', 'date', 'block']
 
-	return properties, vi, defor, water, evapo, fires
+	return properties, vi, defor, water, evapo, fires, pop
 
 
-properties, vi, defor, water, evapo, fires = load_data()
+properties, vi, defor, water, evapo, fires, pop = load_data()
 
 
 st.markdown("""
@@ -84,13 +85,20 @@ def animal_string(animals):
 		return "multiple (%s) documented animals" % ", ".join(full_l)
 
 
+popest = int(pop.loc[pop['block'] == block_name, 'population2018'])
+
 st.markdown("""
 
 	------
 
-	The %s hunting block, outfitted by _%s_, is %s square kilometers. The total
-	fees associated with this concession are $%s, amounting to $%s per square
+	The %s hunting block, outfitted by _%s_, is **%s** square kilometers. The total
+	fees associated with this concession are **$%s**, amounting to **$%s** per square
 	kilometer. There are %s present in this concession.
+
+	According to the [Facebook population density
+	maps](https://dataforgood.fb.com/tools/population-density-maps/), using
+	building counts derived from satellite imagery, there are **%s** people
+	residing (at least temporarily) within the boundaries of the concession.
 
 	------
 
@@ -100,7 +108,8 @@ st.markdown("""
 		"{:,d}".format(area), 
 		"{:,d}".format(fees), 
 		"{:,d}".format(int(fees/area)),
-		animal_string(animals)
+		animal_string(animals),
+		"{:,d}".format(popest)
 	)
 )
 
@@ -306,6 +315,8 @@ st.markdown("""
 	this year an anomaly?  The x-axis is _day of year_.  If the red line strays
 	from the grey area, which represents the 95 percent confidence interval based
 	on the previous 11 years, then that day's fire count is considered anomalous.
+	 The bottomline for the initial set of concessions is that the fire count is
+	down this year, relative to the previous decade.
 
 """)
 
