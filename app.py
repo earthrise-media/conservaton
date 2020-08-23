@@ -289,7 +289,6 @@ st.markdown("""
 
 fires_df = fires[fires["block"]==block_name]
 
-
 c = alt.Chart(fires_df).mark_bar(
 		color="#e45756",
 		size=0.6
@@ -300,8 +299,45 @@ c = alt.Chart(fires_df).mark_bar(
 
 st.altair_chart(c, use_container_width=True)
 
+st.markdown("""
+
+	There is clearly a seasonal pattern of fires.  How does this year (in red)
+	compare against previous years?  In other words, is the pattern of fires seen
+	this year an anomaly?  The x-axis is _day of year_.  If the red line strays
+	from the grey area, which represents the 95 percent confidence interval based
+	on the previous 11 years, then that day's fire count is considered anomalous.
+
+""")
+
+fires_df['year'] = pd.DatetimeIndex(fires_df['date']).year
+fires_df['day_of_year'] = pd.DatetimeIndex(fires_df['date']).dayofyear
+fires_df_early = fires_df[fires_df["year"] < 2020]
+fires_df_late = fires_df[fires_df["year"] == 2020]
+
+fires_ci = alt.Chart(fires_df_early).mark_errorband(extent='ci').encode(
+	    x='day_of_year',
+	    y='fires'
+)
 
 
+fires_smooth = alt.Chart(fires_df_late).mark_line(
+	color='#e45756'
+).transform_window(
+	rolling_mean='mean(fires)',
+	frame=[-10, 10]
+).encode(
+	x=alt.X(
+		'day_of_year',
+		axis=alt.Axis(
+			title=""
+		),
+	),
+	y=alt.Y(
+		'rolling_mean:Q'
+	)
+)
+
+st.altair_chart(fires_ci + fires_smooth, use_container_width=True)
 
 st.markdown("""
 
@@ -322,13 +358,11 @@ st.markdown("""
 	studies to demonstrate the [efficacy of multiple use protected
 	areas](https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0022722).
 
-	3. Fire anomalies
+	3. Human modifcation (histogram for 2019)
 
-	4. Human modifcation (histogram for 2019)
+	4. Land cover
 
-	5. Land cover
-
-	6. Some measures are daily, through yesterday.  Some are annual.  For those,
+	5. **Higher spatial and temporal resolution**.  Some measures are daily, through yesterday.  Some are annual.  For those,
 	more up-to-date measures can be derived, but that would require a lot more
 	work.
 
