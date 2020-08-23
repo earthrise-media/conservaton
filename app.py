@@ -29,10 +29,14 @@ def load_data(plot=True):
 	defor = pd.read_pickle('data/defor.pkl')
 	water = pd.read_pickle('data/waterclass.pkl')
 	evapo = pd.read_pickle('data/evapotranspiration.pkl')
-	return properties, vi, defor, water, evapo
+
+	fires = pd.read_pickle('data/fires.pkl')
+	fires.columns = ['fires', 'date', 'block']
+
+	return properties, vi, defor, water, evapo, fires
 
 
-properties, vi, defor, water, evapo = load_data()
+properties, vi, defor, water, evapo, fires = load_data()
 
 
 st.markdown("""
@@ -57,7 +61,6 @@ block_name = st.selectbox(
 area = int(properties.loc[properties["HUNT_BLOCK"] == block_name, "AREA"])
 fees = int(properties.loc[properties["HUNT_BLOCK"] == block_name, "TOTALFEES"])
 outfitter = list(properties.loc[properties["HUNT_BLOCK"] == block_name, "OUTFITTER2"])[0]
-print(outfitter)
 
 animal_names = ["BUFFALO", "IMPALA", "LEOPARD", "LION", "PUKU"]
 animals = properties.loc[properties["HUNT_BLOCK"] == block_name, animal_names].to_dict()
@@ -273,6 +276,37 @@ st.markdown("""
 
 	----
 
+	## Fires
+
+	The [Fire Information for Resource Management
+	System](https://earthdata.nasa.gov/earth-observation-data/near-real-time/firms)
+	(FIRMS) was developed to provide near real-time active fire locations to
+	natural resource managers that faced challenges obtaining timely
+	satellite-derived fire information.  We report the fires for each day since
+	January 1, 2001 above an intensity threshold of 300 Kelvin.  
+
+""")
+
+fires_df = fires[fires["block"]==block_name]
+
+
+c = alt.Chart(fires_df).mark_bar(
+		color="#e45756",
+		size=0.6
+	).encode(
+	    x='date:T',
+	    y='fires'
+)
+
+st.altair_chart(c, use_container_width=True)
+
+
+
+
+st.markdown("""
+
+	----
+
 	## Next steps
 	There are a lot of other views and metrics that may be useful.
 
@@ -288,17 +322,13 @@ st.markdown("""
 	studies to demonstrate the [efficacy of multiple use protected
 	areas](https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0022722).
 
-	3. Fires (count per month) whole line
+	3. Fire anomalies
 
-	4. Fire anomalies
+	4. Human modifcation (histogram for 2019)
 
-	5. Human modifcation (histogram for 2019)
+	5. Land cover
 
-	6. Land cover
-
-	7. Evapotranspiration
-
-	8. Some measures are daily, through yesterday.  Some are annual.  For those,
+	6. Some measures are daily, through yesterday.  Some are annual.  For those,
 	more up-to-date measures can be derived, but that would require a lot more
 	work.
 
