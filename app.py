@@ -137,7 +137,9 @@ st.markdown("""
 
 	The total carbon within the **%s** concession, both above- and below-ground,
 	is estimated to be **%s** million tonnes of Carbon (an average of **%s**
-	tC/ha).  These data are 
+	tC/ha).  The aggregate carbon data are described in the article [_Mapping
+	co-benefits for carbon storage and biodiversity to inform conservation policy
+	and action_](https://royalsocietypublishing.org/doi/10.1098/rstb.2019.0128).
 
 """ % (
 		block_name,
