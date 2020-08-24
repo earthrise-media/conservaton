@@ -548,6 +548,10 @@ st.markdown("""
 
 	## Weather and climate
 
+	How to mitigate the potential impacts of broad climate change.
+
+	### Weather
+
 	The weather information, daily precipitation and daily temperature, are
 	derived from the [Copernicus Climate Change Service ERA5 atmospheric
 	reanalysis](https://cds.climate.copernicus.eu/cdsapp#!/dataset/reanalysis-era5-single-levels?tab=overview).
@@ -607,7 +611,22 @@ weather_smooth = alt.Chart(weather_df_late).mark_line(
 
 st.altair_chart(weather_ci + weather_smooth, use_container_width=True)
 
+st.markdown("""
 
+	### Climate
+
+	The NASA NEX-GDDP dataset is comprised of downscaled climate scenarios for
+	the globe that are derived from the General Circulation Model (GCM) runs
+	conducted under the Coupled Model Intercomparison Project Phase 5 and across
+	two of the four greenhouse gas emissions scenarios known as Representative
+	Concentration Pathways. 
+
+	This dataset was prepared by the Climate Analytics Group and NASA Ames
+	Research Center using the NASA Earth Exchange, and distributed by the NASA
+	Center for Climate Simulation (NCCS).  The resolution is 0.25 arc degrees,
+	and reported daily.
+
+""")
 
 st.markdown("""
 
