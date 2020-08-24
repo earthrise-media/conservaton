@@ -34,14 +34,15 @@ def load_data(plot=True):
 	soil = pd.read_pickle('data/soil.pkl')
 	carbon = pd.read_pickle('data/carbon.pkl')
 	forestcarbon = pd.read_pickle('data/forestcarbon.pkl')
+	weather = pd.read_pickle('data/weather.pkl')
 
 	fires = pd.read_pickle('data/fires.pkl')
 	fires.columns = ['fires', 'date', 'block']
 
-	return properties, vi, defor, water, evapo, fires, pop, soil, carbon, forestcarbon
+	return properties, vi, defor, water, evapo, fires, pop, soil, carbon, forestcarbon, weather
 
 
-properties, vi, defor, water, evapo, fires, pop, soil, carbon, forestcarbon = load_data()
+properties, vi, defor, water, evapo, fires, pop, soil, carbon, forestcarbon, weather = load_data()
 
 
 st.markdown("""
@@ -543,6 +544,73 @@ st.altair_chart(evapo_raw + evapo_smooth, use_container_width=True)
 
 st.markdown("""
 
+	-------
+
+	## Weather and climate
+
+	The weather information, daily precipitation and daily temperature, are
+	derived from the [Copernicus Climate Change Service ERA5 atmospheric
+	reanalysis](https://cds.climate.copernicus.eu/cdsapp#!/dataset/reanalysis-era5-single-levels?tab=overview).
+	The spatial resolution is 0.25° by 0.25° gridded degree, which is equivalent
+	to about 27.75 km at the Equator.
+
+	The timeseries graph illustrates the daily confidence interval for 2000-2019,
+	with the daily measurements from 2020 overlaid in red.
+	
+
+""")
+
+weather_df = weather[weather["block"]==block_name]
+weather_df['year'] = pd.DatetimeIndex(weather_df['date']).year
+weather_df['day_of_year'] = pd.DatetimeIndex(weather_df['date']).dayofyear
+weather_df_early = weather_df[weather_df["year"] < 2020]
+weather_df_late = weather_df[weather_df["year"] == 2020]
+
+weather_variable = st.selectbox(
+	'Weather variable',
+	['Daily mean temperature (C)', 'Daily precipitation (cm)']
+)
+
+var_dicts = {
+	'Daily mean temperature (C)': {'varname': 'temp_celsius', 'units': 'Centimeters'}, 
+	'Daily precipitation (cm)': {'varname': 'precip_cm', 'units': 'Celsius'}
+}
+
+weather_ci = alt.Chart(weather_df_early).mark_errorband(extent='ci').encode(
+	    x='day_of_year',
+	    y=alt.Y(
+	    	var_dicts[weather_variable]['varname'], 
+	    	scale=alt.Scale(zero=False),
+	    	title=""
+	    )
+)
+
+
+weather_smooth = alt.Chart(weather_df_late).mark_line(
+	color='#e45756'
+).transform_window(
+	rolling_mean='mean(%s)' % var_dicts[weather_variable]['varname'],
+	frame=[-2, 2]
+).encode(
+	x=alt.X(
+		'day_of_year',
+		axis=alt.Axis(
+			title=""
+		),
+	),
+	y=alt.Y(
+		'rolling_mean:Q',
+		title="%s" % var_dicts[weather_variable]['units'],
+		scale=alt.Scale(zero=False)
+	)
+)
+
+st.altair_chart(weather_ci + weather_smooth, use_container_width=True)
+
+
+
+st.markdown("""
+
 	----
 
 	## Next steps
@@ -565,7 +633,8 @@ st.markdown("""
 	be derived, but that would require a lot more work.
 
 	4. **Additional datasets**.  Including building outlines and other
-	infrastructure, as well as land use.
+	infrastructure, as well as land use.  weather anomalies and climate
+	(mitigate, proactively, the impact of climate change.) 
 
 """)
 
