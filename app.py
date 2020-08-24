@@ -229,9 +229,7 @@ forest_carbon_percent = np.round(100*forest_mtC/mtC, 2)
 
 st.markdown("""
 
-	----
-
-	## Forest carbon
+	### Forest carbon
 
 	The Oak Ridge National Lab, in partnership with NASA, have [published a
 	harmonized and consistent global map of aboveground
