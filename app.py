@@ -137,7 +137,7 @@ st.markdown("""
 
 	The total carbon within the **%s** concession, both above- and below-ground,
 	is estimated to be **%s** million tonnes of Carbon (an average of **%s**
-	tC/ha).
+	tC/ha).  These data are 
 
 """ % (
 		block_name,
@@ -170,28 +170,57 @@ st.altair_chart(c, use_container_width=True)
 
 soil_df = soil[soil["block"] == block_name]
 
-
-
-
 st.markdown(""" 
 
 	### Soil organic carbon density
 
+	[Open Land Map](https://www.openlandmap.org/) publishes information on soil
+	carbon at six different depths.  The methodology is described
+	[here](https://github.com/Envirometrix/LandGISmaps#soil-properties-and-classes).
+	This data is summarized below for the **%s** concession.
+
+""" % block_name)
+
+
+c = alt.Chart(soil_df).mark_area(interpolate="basis").encode(
+    alt.X(
+    	'carbon_g_per_kg',
+    	title="Carbon density (g/kg)",
+    	scale=alt.Scale(domain=[0,6.5], clamp=True)
+    ),
+    alt.Y(
+    	'frequency:Q',
+    	title="",
+    ),
+    color=alt.Color(
+    	"depth:N", 
+    	legend=None, 
+    	scale=alt.Scale(scheme='brownbluegreen',reverse=True),
+    	sort=['0cm', '10cm', '30cm', '60cm', '100cm', '200cm']
+    ),
+    row=alt.Row(
+    	'depth:N',
+    	title="Soil depths // pixel frequency",
+    	sort=['0cm', '10cm', '30cm', '60cm', '100cm', '200cm'],
+    	spacing=0
+    )
+).properties(
+    title='Frequency (number of 250m pixels) of carbon densities at six different soil depths',
+    height=60
+).configure_axis(
+	grid=False, domain=False
+).configure_view(strokeWidth=0)
+
+
+st.altair_chart(c, use_container_width=True)
+
+st.markdown(""" 
+
 	### Forest carbon
 
+	Above-ground carbon, screened by forest
+
 """)
-
-
-
-# c = alt.Chart(soil_df).transform_fold(
-# 	['b0', 'b10', 'b30', 'b60', 'b100', 'b200']
-# ).mark_area().encode(
-#     alt.X('carbon_g_per_kg:Q'),
-#     alt.Y('frequency'),
-#     alt.Row('depth:N')
-# )
-
-# st.altair_chart(c, use_container_width=True)
 
 st.markdown("""
 
