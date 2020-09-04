@@ -35,27 +35,121 @@ def load_data(plot=True):
 	carbon = pd.read_pickle('data/carbon.pkl')
 	forestcarbon = pd.read_pickle('data/forestcarbon.pkl')
 	weather = pd.read_pickle('data/weather.pkl')
+	pop_rate = pd.read_pickle('data/pop.pkl')
+	buildings = pd.read_pickle('data/buildings.pkl')
+	summary = pd.read_pickle('data/summary.pkl')
 
 	fires = pd.read_pickle('data/fires.pkl')
 	fires.columns = ['fires', 'date', 'block']
 
-	return properties, vi, defor, water, evapo, fires, pop, soil, carbon, forestcarbon, weather
+	return properties, vi, defor, water, evapo, fires, pop, soil, carbon, forestcarbon, weather, pop_rate, buildings, summary
 
 
-properties, vi, defor, water, evapo, fires, pop, soil, carbon, forestcarbon, weather = load_data()
+properties, vi, defor, water, evapo, fires, pop, soil, carbon, forestcarbon, weather, pop_rate, buildings, summary = load_data()
 
 
 st.markdown("""
 
 	This roughcut web application is intended to illustrate both the baseline and
 	real-time environmental measurements on possible concessions.  Possible
-	metrics include vegetatiwon indices, carbon content, deforestation, among
+	metrics include vegetation indices, carbon content, and deforestation, among
 	others.  The front-end is simple.  A fancy user interface or graphics can be
 	built.  The objective of this early application is to settle on the
 	measurements that are most useful for reporting and concession
 	prioritization.
 
+	The first and most important feature is to rank-order the hunting blocks
+	based on three dimensions: human pressure, biodiversity significance, and
+	landscape connectivity.
+
+	This is a quick example of a dashboard to prioritize concessions based on
+	these three dimensions. If fixed costs an important feature, then **Absolute**
+	weighting is appropriate. If bang-per-buck is more important, then **Relative**
+	weighting is more important.
+
 """)
+
+weighting_scheme = st.selectbox(
+	'Weighting scheme',
+	['Absolute', 'Relative']
+)
+
+human_weight = st.slider(
+	'Human pressure',
+	0, 100, 50
+)
+
+bio_weight = st.slider(
+	'Biodiversity significance',
+	0, 100, 50
+)
+
+connectivity_weight = st.slider(
+	'Landscape connectivity',
+	0, 100, 50
+)
+
+denom = human_weight + bio_weight + connectivity_weight
+
+x = summary.copy()
+
+x["wt"] = x["bio"]/max(x["bio"]) * (bio_weight / denom) \
+		+ x["defor"]/max(x["defor"]) * (human_weight / denom / 2) \
+		+ x["pop"]/max(x["pop"]) * (human_weight / denom / 2) \
+		+ x["forest"]/max(x["forest"]) * (connectivity_weight / denom)
+
+if weighting_scheme == "Absolute":
+	
+	x["wt"] = x["wt"] / max(x["wt"])
+	df = x[["block", "wt"]]
+
+else:
+
+	x["wt"] = 10000 * x["wt"] / x["area"]
+	x["wt"] = x["wt"] / max(x["wt"])
+	df = x[["block", "wt"]]
+
+bars = alt.Chart(df).mark_bar(size=20).encode(
+    x=alt.X(
+    	'wt:Q',
+    	axis=alt.Axis(
+			title="Normalized weight",
+			labels=False
+		)
+	),
+    y=alt.Y(
+    	'block:O', 
+    	sort='-x',
+    	axis=alt.Axis(
+			title="",
+			labelFontSize=14
+		)
+    ),
+    color=alt.Color(
+    	'wt', 
+    	scale=alt.Scale(
+    		scheme='tealblues'
+    	), 
+    	legend=None
+    )
+).configure_axis(
+    grid=False
+).configure_view(
+    strokeWidth=0
+).properties(height=300)
+
+st.altair_chart(bars, use_container_width=True)
+
+st.markdown(""" 
+
+-----
+
+The in-depth data for each individual hunting block is available in the
+following sections.
+
+
+""")
+
 
 block_names = list(properties["HUNT_BLOCK"])
 
@@ -71,6 +165,12 @@ outfitter = list(properties.loc[properties["HUNT_BLOCK"] == block_name, "OUTFITT
 animal_names = ["BUFFALO", "IMPALA", "LEOPARD", "LION", "PUKU"]
 animals = properties.loc[properties["HUNT_BLOCK"] == block_name, animal_names].to_dict()
 
+building_count = int(buildings.loc[buildings["block"] == block_name, "buildings"])
+
+ppop_rate = pop_rate.copy()
+ppop_rate[['pop_rate']]=ppop_rate.groupby('block')[["population", "block"]].pct_change()
+pop_rate_num = ppop_rate.loc[pop_rate["block"] == block_name, "pop_rate"]
+pop_rate_num = np.round(100*np.mean(pop_rate_num), 2)
 
 def animal_string(animals):
 
@@ -104,7 +204,8 @@ st.markdown("""
 	maps](https://dataforgood.fb.com/tools/population-density-maps/), using
 	building counts derived from high-resolution satellite imagery, there are
 	**%s** people residing (at least temporarily) within the boundaries of the
-	concession.
+	concession, with an increase of **%s** percent average growth rate over 20
+	years and within **%s** buildings in 2020.
 
 """ % (
 		block_name, 
@@ -113,7 +214,9 @@ st.markdown("""
 		"{:,d}".format(fees), 
 		"{:,d}".format(int(fees/area)),
 		animal_string(animals),
-		"{:,d}".format(popest)
+		"{:,d}".format(popest),
+		pop_rate_num,
+		"{:,d}".format(building_count)
 	)
 )
 
